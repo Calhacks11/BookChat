@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deepgram Audio Generation</title>
+</head>
+<body>
+  <h1>Deepgram Audio Generation Example</h1>
+  <button id="generateAudio">Generate Audio</button>
+  <audio id="audioPlayer" controls></audio>
+
+  <script type="module">
+    // Import Deepgram SDK using a CDN
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@deepgram/sdk/dist/index.js';
+
+    // Your Deepgram API Key
+    const DEEPGRAM_API_KEY = 'c52235028b0dda2166be00434f7b8c4eabc8245d';
+
+    // Create a Deepgram client
+    const deepgram = createClient(DEEPGRAM_API_KEY);
+
+    const text = "Hello, how can I help you today?";
+
+    const getAudio = async () => {
+      try {
+        // Make a request to Deepgram's text-to-speech service
+        const response = await deepgram.speak.request(
+          { text },
+          {
+            model: "aura-asteria-en",
+            encoding: "linear16",
+            container: "wav",
+          }
+        );
+
+        // Get the audio stream and headers from the response
+        const stream = await response.getStream();
+
+        if (stream) {
+          // Convert the stream to an audio buffer
+          const audioBuffer = await getAudioBuffer(stream);
+
+          // Convert the buffer into a Blob and create an object URL for the audio player
+          const blob = new Blob([audioBuffer], { type: 'audio/wav' });
+          const audioUrl = URL.createObjectURL(blob);
+
+          // Play the audio in the browser
+          document.getElementById('audioPlayer').src = audioUrl;
+        } else {
+          console.error("Error generating audio");
+        }
+
+      } catch (error) {
+        console.error("Error during the audio generation:", error);
+      }
+    };
+
+    // Helper function to convert stream to audio buffer
+    const getAudioBuffer = async (response) => {
+      const reader = response.body.getReader(); // Stream reader
+      const chunks = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        chunks.push(value);
+      }
+
+      // Concatenate all chunks into a single Uint8Array
+      const dataArray = chunks.reduce(
+        (acc, chunk) => Uint8Array.from([...acc, ...chunk]),
+        new Uint8Array(0)
+      );
+
+      return dataArray.buffer; // Return as ArrayBuffer
+    };
+
+    // Attach the click event to the button
+    document.getElementById('generateAudio').addEventListener('click', getAudio);
+  </script>
+</body>
+</html>
