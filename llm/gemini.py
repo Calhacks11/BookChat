@@ -1,6 +1,9 @@
 import google.generativeai as genai
+from dotenv import load_dotenv
+import os
 
-GOOGLE_API_KEY = 'AIzaSyA22TDRXukEEihXBe7d3xcqNp2pBdTxsbE'
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 prompt_file = '/Users/amitthakur/PycharmProjects/BookChat/prompts/conversation-1.txt'
 

@@ -6,6 +6,8 @@ from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QPushBut
 import os
 from epub_parser.epub_to_text import epub_to_chapters, get_chapter
 from llm.llm_queries import query_characters
+from voice.dialog_utils import rotate_character_narration
+from voice.deepgram_util import speak
 
 class ChapterWindow(QWidget):
     def __init__(self, bookname):
@@ -15,20 +17,52 @@ class ChapterWindow(QWidget):
 
 
     def initUI(self):
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
         content = get_chapter(self.bookname, 1)
-        label = QLabel(content, self)
         status = QLabel('---', self)
-        layout.addWidget(label)
-        layout.addWidget(status)
-        self.setLayout(layout)
+        self.layout.addWidget(status)
+        self.setLayout(self.layout)
         self.setWindowTitle('Chapter Window')
         self.setGeometry(300, 300, 400, 200)
         status.setText('Understanding the characters...')
-        prompt_response = query_characters(content)
-        status.setText(str(prompt_response))
+        self.characters = query_characters(content)
+        print(self.characters)
+        status.setText('Characters are ready!')
+
+        self.n_dialogs = sum([len(character['dialogues']) for character in self.characters])
+        self.n_characters = len(self.characters)
+        self.labels = []
+        for i in range(self.n_dialogs):
+            i_character = i % self.n_characters
+            character = self.characters[i_character]
+            jth_dialog = int(i / self.n_characters)
+            label = QLabel(f"{character['character_name']}: {character['dialogues'][jth_dialog]}")
+            self.labels.append(label)
+            self.layout.addWidget(label)
+
+
+        # rotate_character_narration(characters)
+        self.play_char_btn = QPushButton(f"Play Characters")
+        self.play_char_btn.clicked.connect(self.play_btn_click)
+        self.layout.addWidget(self.play_char_btn)
+
+        # self.close()
 
         # print(prompt_response)
+
+    def play_btn_click(self):
+        self.rotate_character_narration()
+        self.play_char_btn.setEnabled(False)
+
+    def rotate_character_narration(self):
+        for i in range(self.n_dialogs):
+            i_character = i % self.n_characters
+            character = self.characters[i_character]
+            jth_dialog = int(i / self.n_characters)
+            self.labels[i].setStyleSheet("background-color: yellow; color: black;")
+            app.processEvents()
+            speak(character['dialogues'][jth_dialog], character['gender'])
+
 
 
 class FileUploadApp(QWidget):
@@ -41,7 +75,7 @@ class FileUploadApp(QWidget):
         layout = QVBoxLayout()
 
         # Create a button to open the file dialog
-        self.upload_button = QPushButton('Upload File', self)
+        self.upload_button = QPushButton('Upload epub File', self)
         self.upload_button.clicked.connect(self.openFileDialog)
 
         # Create a label to display the selected file path
@@ -72,7 +106,7 @@ class FileUploadApp(QWidget):
 
         # If a file is selected
         if file_name:
-            self.label.setText(f'Selected file: {file_name}')
+            self.label.setText(f'Selected .epub file: {file_name}')
             self.selected_file_path = file_name
 
             # Read the file in binary mode and get the bytes
@@ -88,7 +122,7 @@ class FileUploadApp(QWidget):
         # Get the new file path from the input field
         file_name = os.path.splitext(os.path.basename(self.selected_file_path))[0]
         new_file_path = f'data/{file_name}.epub'
-
+        self.label.setText(f'Uploading and parsing the .epub file...')
         if new_file_path and self.file_bytes:
             try:
                 # Write the file bytes to the new path

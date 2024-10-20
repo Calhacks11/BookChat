@@ -5,7 +5,7 @@
 - Install conda. Follow instructions [here](https://conda.io/projects/conda/en/latest/user-guide/install/index.html).
 - Create conda environment:
 ```commandline
-conda create --name book-chat python=3.9
+conda create --name book-chat python=3.11
 conda activate book-chat
 pip install -r requirements.txt
 ```
