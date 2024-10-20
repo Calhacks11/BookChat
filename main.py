@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile
 import shutil
-from epub_parser.epub_to_text import epub_to_text
+from epub_parser.epub_to_text import epub_to_chapters, get_chapter
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -34,4 +34,15 @@ async def create_upload_file(file: UploadFile = File(...)):
     with open(save_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    epub_to_chapters(file.filename)
     return {"filename": file.filename, "status": "File uploaded successfully"}
+
+@app.get("/book/{bookname}/chapter/{ch_no}")
+async def read_chapter(bookname: str, ch_no: int):
+    content = get_chapter(bookname, ch_no)
+    return {
+        "bookname": bookname,
+        "ch_no": ch_no,
+        "content": content
+    }
+
