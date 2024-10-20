@@ -2,6 +2,9 @@ from fastapi import FastAPI, File, UploadFile
 import shutil
 from epub_parser.epub_to_text import epub_to_chapters, get_chapter
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Union
+from llm.gemini import query_prompt
 
 app = FastAPI()
 
@@ -19,6 +22,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class LLMQuery(BaseModel):
+    query: Union[str, None] = None
+
 
 
 @app.get("/")
@@ -45,4 +53,13 @@ async def read_chapter(bookname: str, ch_no: int):
         "ch_no": ch_no,
         "content": content
     }
+
+@app.post("/llm-query")
+async def llm_query(llm_query: LLMQuery):
+    llm_response = query_prompt(llm_query.query)
+    return {
+        "response": llm_response
+    }
+
+
 
