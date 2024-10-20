@@ -30,60 +30,10 @@
     <div class="container mt-5">
         <div id="response" class="border p-3 rounded shadow"></div>
     </div>
-
+    <script src="script.js"></script>
     <!-- Bootstrap JS (Optional) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        document.getElementById('uploadForm').onsubmit = async function (e) {
-            e.preventDefault();  // Prevent the form from submitting the default way
-
-            const formData = new FormData();
-            const fileInput = document.getElementById('fileInput');
-
-            // Append the file to the FormData object
-            formData.append('file', fileInput.files[0]);
-
-            try {
-                // Send a POST request with the file to the FastAPI backend
-                const response = await fetch('http://127.0.0.1:8000/uploadbook', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                document.getElementById('responseMessage').textContent = result.status;
-                document.getElementById('responseMessage').classList.add('text-success');
-
-
-                // Make a GET request to the API
-                const response_ch = await fetch('http://127.0.0.1:8000/book/conversation/chapter/1', {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-
-                // Check if the response is okay (status 200)
-                if (!response_ch.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                // Parse the JSON response
-                const data = await response_ch.json();
-
-                // Display the response content
-                const responseDiv = document.getElementById('response');
-                responseDiv.innerHTML = `
-                    <h3>${data.bookname} - Chapter ${data.ch_no}</h3>
-                    <pre>${data.content}</pre>
-                `;
-            } catch (error) {
-                document.getElementById('responseMessage').textContent = 'Error uploading file!';
-                document.getElementById('responseMessage').classList.add('text-danger');
-            }
-        }
-    </script>
 
 </body>
 </html>
